@@ -167,6 +167,116 @@
       <p>Dominio oficial: drjaimebra.com · Alojado en red de alta velocidad y seguridad.</p>
     </div>
   </footer>
+<!-- Widget Flotante Clofovoz AI -->
+<div id="clofovoz-chat-widget" style="position: fixed; bottom: 24px; right: 24px; z-index: 999999; font-family: sans-serif;">
+  <!-- Botón Flotante -->
+  <button id="chat-toggle-btn" onclick="toggleChat()" aria-label="Abrir chat" style="width: 58px; height: 58px; border-radius: 50%; background-color: #0f172a; color: white; border: 1px solid #334155; font-size: 26px; cursor: pointer; box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center;">
+    💬
+  </button>
 
+  <!-- Ventana de Chat -->
+  <div id="chat-box" style="display: none; flex-direction: column; width: 340px; height: 480px; background-color: #020617; color: #f8fafc; border-radius: 16px; border: 1px solid #1e293b; box-shadow: 0 20px 30px rgba(0,0,0,0.4); overflow: hidden; margin-bottom: 12px;">
+    <!-- Encabezado -->
+    <div style="padding: 14px 16px; background-color: #0f172a; border-bottom: 1px solid #1e293b; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div style="width: 28px; height: 28px; border-radius: 6px; background-color: rgba(6,182,212,0.2); color: #22d3ee; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 11px;">
+          AI
+        </div>
+        <div>
+          <div style="font-size: 13px; font-weight: bold; color: white;">Asistente Dr. Jaime Bracho</div>
+          <div style="font-size: 10px; color: #34d399;">● En línea</div>
+        </div>
+      </div>
+      <button onclick="toggleChat()" style="background: none; border: none; color: #94a3b8; font-size: 16px; cursor: pointer;">✕</button>
+    </div>
+
+    <!-- Mensajes -->
+    <div id="chat-messages" style="flex: 1; padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; font-size: 13px;">
+      <div style="background-color: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 12px; border-top-left-radius: 2px; border: 1px solid #1e293b; max-width: 85%;">
+        ¡Hola! Soy el asistente virtual del Dr. Jaime Bracho. ¿En qué puedo orientarte hoy sobre foniatría y salud vocal?
+      </div>
+    </div>
+
+    <!-- Input -->
+    <form id="chat-form" onsubmit="enviarMensaje(event)" style="padding: 10px; background-color: #0f172a; border-top: 1px solid #1e293b; display: flex; gap: 8px;">
+      <input id="chat-input" type="text" placeholder="Escribe tu consulta..." required
+        style="flex: 1; padding: 8px 12px; background-color: #020617; color: white; border-radius: 10px; border: 1px solid #334155; font-size: 12px; outline: none;">
+      <button type="submit" style="padding: 8px 14px; background-color: #0d9488; color: white; border: none; font-weight: bold; border-radius: 10px; font-size: 13px; cursor: pointer;">
+        ➤
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const RENDER_ENDPOINT = "https://clofovoz-ai-agent.onrender.com/chat";
+  const SITIO_ACTUAL = window.location.hostname;
+
+  function toggleChat() {
+    const box = document.getElementById('chat-box');
+    if (box.style.display === 'none' || box.style.display === '') {
+      box.style.display = 'flex';
+    } else {
+      box.style.display = 'none';
+    }
+  }
+
+  async function enviarMensaje(e) {
+    e.preventDefault();
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const messagesDiv = document.getElementById('chat-messages');
+
+    messagesDiv.innerHTML += `
+      <div style="margin-left: auto; background-color: #0d9488; color: white; padding: 10px 12px; border-radius: 12px; border-top-right-radius: 2px; max-width: 85%;">
+        ${escapeHTML(msg)}
+      </div>
+    `;
+    input.value = '';
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    const typingId = 'typing-' + Date.now();
+    messagesDiv.innerHTML += `
+      <div id="${typingId}" style="background-color: #0f172a; color: #94a3b8; padding: 8px 12px; border-radius: 12px; border-top-left-radius: 2px; border: 1px solid #1e293b; max-width: 85%; font-style: italic; font-size: 11px;">
+        Pensando...
+      </div>
+    `;
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    try {
+      const res = await fetch(RENDER_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: msg, site_context: SITIO_ACTUAL })
+      });
+      const data = await res.json();
+      const typingEl = document.getElementById(typingId);
+      if (typingEl) typingEl.remove();
+
+      messagesDiv.innerHTML += `
+        <div style="background-color: #0f172a; color: #e2e8f0; padding: 10px 12px; border-radius: 12px; border-top-left-radius: 2px; border: 1px solid #1e293b; max-width: 85%;">
+          ${escapeHTML(data.response || data.message || "Sin respuesta del modelo.")}
+        </div>
+      `;
+    } catch (err) {
+      const typingEl = document.getElementById(typingId);
+      if (typingEl) typingEl.remove();
+      messagesDiv.innerHTML += `
+        <div style="background-color: #450a0a; color: #fca5a5; padding: 10px 12px; border-radius: 12px; border-top-left-radius: 2px; border: 1px solid #7f1d1d; max-width: 85%; font-size: 11px;">
+          No se pudo conectar con el agente en Render.
+        </div>
+      `;
+    }
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+  }
+
+  function escapeHTML(str) {
+    return str.replace(/[&<>'"]/g, tag => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+  }
+</script>
 </body>
 </html>
